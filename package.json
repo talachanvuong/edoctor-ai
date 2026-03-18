@@ -1,0 +1,12 @@
+{
+  "name": "edoctor-ai",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch --env-file=.env ./src/server.js"
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
+  }
+}
