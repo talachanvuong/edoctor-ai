@@ -1,12 +1,46 @@
 import http from 'http'
 import { WebSocketServer } from 'ws'
+import deepgramService from './services/deepgramService.js'
 
 const server = http.createServer()
 
 const wss = new WebSocketServer({ server })
 
-wss.on('connection', (ws) => {
-  console.log('Hello World!')
+wss.on('connection', async (ws) => {
+  // Keep alive
+  ws.isAlive = true
+
+  ws.on('pong', () => {
+    ws.isAlive = true
+  })
+
+  const deepgram = await deepgramService.createConnection(ws)
+
+  ws.on('message', (data, isBinary) => {
+    if (!isBinary) {
+      ws.close(1003)
+
+      return
+    }
+
+    deepgram.sendMedia(data)
+  })
+
+  ws.on('close', async () => {
+    deepgram.sendCloseStream({ type: 'CloseStream' })
+  })
 })
+
+setInterval(() => {
+  wss.clients.forEach((ws) => {
+    if (ws.isAlive === false) {
+      return ws.terminate()
+    }
+
+    ws.isAlive = false
+
+    ws.ping()
+  })
+}, 30000)
 
 server.listen(process.env.PORT)
