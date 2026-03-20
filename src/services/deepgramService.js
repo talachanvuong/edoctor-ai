@@ -7,6 +7,7 @@ const createConnection = async (client) => {
     smart_format: true,
     interim_results: true,
     endpointing: 300,
+    utterance_end_ms: 1000,
   })
 
   let keepAlive
@@ -20,6 +21,19 @@ const createConnection = async (client) => {
   const fullSentences = []
 
   deepgram.on('message', (msg) => {
+    if (msg.type === 'UtteranceEnd' && fullSentences.length !== 0) {
+      client.send(
+        JSON.stringify({
+          type: 'result',
+          data: fullSentences.join(' '),
+        })
+      )
+
+      fullSentences.length = 0
+
+      return
+    }
+
     if (msg.type !== 'Results') {
       return
     }
