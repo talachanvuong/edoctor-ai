@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@deepgram/sdk": "^5.0.0",
+    "groq-sdk": "^1.1.1",
     "ws": "^8.19.0"
   }
 }

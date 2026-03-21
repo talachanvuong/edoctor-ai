@@ -1,6 +1,7 @@
 import http from 'http'
 import { WebSocketServer } from 'ws'
 import deepgramService from './services/deepgramService.js'
+import groqService from './services/groqService.js'
 
 const server = http.createServer()
 
@@ -14,8 +15,11 @@ wss.on('connection', async (ws) => {
     ws.isAlive = true
   })
 
-  const deepgram = await deepgramService.createConnection(ws)
+  // Create pipeline
+  const groq = groqService.createInstance(ws)
+  const deepgram = await deepgramService.createConnection(ws, groq)
 
+  // Handle events
   ws.on('message', (data, isBinary) => {
     if (!isBinary) {
       ws.close(1003)

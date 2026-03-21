@@ -1,13 +1,13 @@
 import deepgramConfig from '../config/deepgramConfig.js'
 
-const createConnection = async (client) => {
+const createConnection = async (client, groq) => {
   const deepgram = await deepgramConfig.listen.v1.connect({
     model: 'nova-3',
     language: 'vi',
     smart_format: true,
     interim_results: true,
     endpointing: 300,
-    utterance_end_ms: 1000,
+    utterance_end_ms: 1200,
   })
 
   let keepAlive
@@ -20,7 +20,7 @@ const createConnection = async (client) => {
 
   const fullSentences = []
 
-  deepgram.on('message', (msg) => {
+  deepgram.on('message', async (msg) => {
     if (msg.type === 'UtteranceEnd' && fullSentences.length !== 0) {
       client.send(
         JSON.stringify({
@@ -28,6 +28,8 @@ const createConnection = async (client) => {
           data: fullSentences.join(' '),
         })
       )
+
+      await groq.send(fullSentences.join(' '))
 
       fullSentences.length = 0
 
@@ -55,6 +57,8 @@ const createConnection = async (client) => {
           data: fullSentences.join(' '),
         })
       )
+
+      await groq.send(fullSentences.join(' '))
 
       fullSentences.length = 0
     }
