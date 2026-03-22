@@ -2,6 +2,7 @@ import http from 'http'
 import { WebSocketServer } from 'ws'
 import deepgramService from './services/deepgramService.js'
 import groqService from './services/groqService.js'
+import elevenlabsService from './services/elevenlabsService.js'
 
 const server = http.createServer()
 
@@ -16,7 +17,8 @@ wss.on('connection', async (ws) => {
   })
 
   // Create pipeline
-  const groq = groqService.createInstance(ws)
+  const elevenlabs = elevenlabsService.createInstance(ws)
+  const groq = groqService.createInstance(ws, elevenlabs)
   const deepgram = await deepgramService.createConnection(ws, groq)
 
   // Handle events
@@ -30,7 +32,7 @@ wss.on('connection', async (ws) => {
     deepgram.sendMedia(data)
   })
 
-  ws.on('close', async () => {
+  ws.on('close', () => {
     deepgram.sendCloseStream({ type: 'CloseStream' })
   })
 })

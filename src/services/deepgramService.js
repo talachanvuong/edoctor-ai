@@ -7,7 +7,7 @@ const createConnection = async (client, groq) => {
     smart_format: true,
     interim_results: true,
     endpointing: 300,
-    utterance_end_ms: 1200,
+    utterance_end_ms: 1000,
   })
 
   let keepAlive
@@ -22,16 +22,17 @@ const createConnection = async (client, groq) => {
 
   deepgram.on('message', async (msg) => {
     if (msg.type === 'UtteranceEnd' && fullSentences.length !== 0) {
+      const text = fullSentences.join(' ')
+      fullSentences.length = 0
+
       client.send(
         JSON.stringify({
-          type: 'result',
-          data: fullSentences.join(' '),
+          type: 'transcript',
+          data: text,
         })
       )
 
-      await groq.send(fullSentences.join(' '))
-
-      fullSentences.length = 0
+      await groq.send(text)
 
       return
     }
@@ -51,16 +52,17 @@ const createConnection = async (client, groq) => {
     }
 
     if (msg.speech_final === true) {
+      const text = fullSentences.join(' ')
+      fullSentences.length = 0
+
       client.send(
         JSON.stringify({
-          type: 'result',
-          data: fullSentences.join(' '),
+          type: 'transcript',
+          data: text,
         })
       )
 
-      await groq.send(fullSentences.join(' '))
-
-      fullSentences.length = 0
+      await groq.send(text)
     }
   })
 

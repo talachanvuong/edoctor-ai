@@ -1,6 +1,6 @@
 import groqConfig from '../config/groqConfig.js'
 
-const createInstance = (client) => {
+const createInstance = (client, elevenlabs) => {
   const histories = [
     {
       role: 'system',
@@ -38,16 +38,22 @@ const createInstance = (client) => {
       sentence += token
 
       if (sentence.includes('|')) {
-        client.send(
-          JSON.stringify({
-            type: 'result',
-            data: sentence.replaceAll('|', '.'),
-          })
-        )
+        const contentSentence = sentence.replaceAll('|', '.')
+
+        await elevenlabs.send(contentSentence)
 
         sentence = ''
       }
     }
+
+    const contentResponse = response.replaceAll('|', '.')
+
+    client.send(
+      JSON.stringify({
+        type: 'result',
+        data: contentResponse,
+      })
+    )
 
     histories.push({
       role: 'assistant',
