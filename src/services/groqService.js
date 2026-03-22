@@ -15,50 +15,86 @@ const createInstance = (client, elevenlabs) => {
       content,
     })
 
-    const stream = await groqConfig.chat.completions.create({
-      messages: histories,
-      model: 'openai/gpt-oss-20b',
-      temperature: 0.2,
-      max_completion_tokens: 256,
-      top_p: 0.9,
-      stream: true,
-    })
+    try {
+      const stream = await groqConfig.chat.completions.create({
+        messages: histories,
+        model: 'openai/gpt-oss-20b',
+        temperature: 0.2,
+        max_completion_tokens: 256,
+        top_p: 0.9,
+        stream: true,
+      })
 
-    let response = ''
-    let sentence = ''
+      let response = ''
+      let sentence = ''
 
-    for await (const chunk of stream) {
-      const token = chunk.choices[0]?.delta?.content || ''
+      for await (const chunk of stream) {
+        if (client.readyState !== 1) {
+          break
+        }
 
-      if (token === '') {
-        continue
+        const token = chunk.choices[0]?.delta?.content || ''
+
+        if (token === '') {
+          continue
+        }
+
+        response += token
+        sentence += token
+
+        if (sentence.includes('|')) {
+          const contentSentence = sentence.replaceAll('|', '.')
+
+          try {
+            await elevenlabs.send(contentSentence)
+          } catch {}
+
+          sentence = ''
+        }
       }
 
-      response += token
-      sentence += token
+      const contentResponse = response.replaceAll('|', '.')
 
-      if (sentence.includes('|')) {
-        const contentSentence = sentence.replaceAll('|', '.')
+      if (contentResponse.trim() && client.readyState === 1) {
+        client.send(
+          JSON.stringify({
+            type: 'result',
+            data: contentResponse,
+          })
+        )
+      } else if (!contentResponse.trim() && client.readyState === 1) {
+        client.send(
+          JSON.stringify({
+            type: 'result',
+            data: 'Không có phản hồi, vui lòng thử lại.',
+          })
+        )
+      }
 
-        await elevenlabs.send(contentSentence)
+      if (response.trim()) {
+        histories.push({
+          role: 'assistant',
+          content: response,
+        })
+      } else {
+        if (histories.at(-1)?.role === 'user') {
+          histories.pop()
+        }
+      }
+    } catch {
+      if (histories.at(-1)?.role === 'user') {
+        histories.pop()
+      }
 
-        sentence = ''
+      if (client.readyState === 1) {
+        client.send(
+          JSON.stringify({
+            type: 'error',
+            message: 'LLM lỗi, vui lòng thử lại.',
+          })
+        )
       }
     }
-
-    const contentResponse = response.replaceAll('|', '.')
-
-    client.send(
-      JSON.stringify({
-        type: 'result',
-        data: contentResponse,
-      })
-    )
-
-    histories.push({
-      role: 'assistant',
-      content: response,
-    })
   }
 
   return {

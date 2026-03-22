@@ -8,6 +8,8 @@ const createConnection = async (client, groq) => {
     interim_results: true,
     endpointing: 300,
     utterance_end_ms: 1000,
+    encoding: 'linear16',
+    sample_rate: 16000,
   })
 
   let keepAlive
@@ -25,14 +27,16 @@ const createConnection = async (client, groq) => {
       const text = fullSentences.join(' ')
       fullSentences.length = 0
 
-      client.send(
-        JSON.stringify({
-          type: 'transcript',
-          data: text,
-        })
-      )
+      if (client.readyState === 1) {
+        client.send(
+          JSON.stringify({
+            type: 'transcript',
+            data: text,
+          })
+        )
 
-      await groq.send(text)
+        await groq.send(text)
+      }
 
       return
     }
@@ -55,14 +59,16 @@ const createConnection = async (client, groq) => {
       const text = fullSentences.join(' ')
       fullSentences.length = 0
 
-      client.send(
-        JSON.stringify({
-          type: 'transcript',
-          data: text,
-        })
-      )
+      if (client.readyState === 1) {
+        client.send(
+          JSON.stringify({
+            type: 'transcript',
+            data: text,
+          })
+        )
 
-      await groq.send(text)
+        await groq.send(text)
+      }
     }
   })
 
@@ -71,12 +77,14 @@ const createConnection = async (client, groq) => {
   })
 
   deepgram.on('error', (err) => {
-    client.send(
-      JSON.stringify({
-        type: 'error',
-        message: err,
-      })
-    )
+    if (client.readyState === 1) {
+      client.send(
+        JSON.stringify({
+          type: 'error',
+          message: err,
+        })
+      )
+    }
   })
 
   deepgram.connect()

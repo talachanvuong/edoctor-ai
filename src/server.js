@@ -4,24 +4,43 @@ import deepgramService from './services/deepgramService.js'
 import groqService from './services/groqService.js'
 import elevenlabsService from './services/elevenlabsService.js'
 
-const server = http.createServer()
+process.on('uncaughtException', () => {})
+process.on('unhandledRejection', () => {})
+
+const server = http.createServer((_req, res) => {
+  res.writeHead(200)
+  res.end('OK')
+})
 
 const wss = new WebSocketServer({ server })
 
 wss.on('connection', async (ws) => {
-  // Keep alive
   ws.isAlive = true
 
   ws.on('pong', () => {
     ws.isAlive = true
   })
+  ws.on('error', () => {})
 
-  // Create pipeline
-  const elevenlabs = elevenlabsService.createInstance(ws)
-  const groq = groqService.createInstance(ws, elevenlabs)
-  const deepgram = await deepgramService.createConnection(ws, groq)
+  let deepgram
 
-  // Handle events
+  try {
+    const elevenlabs = elevenlabsService.createInstance(ws)
+    const groq = groqService.createInstance(ws, elevenlabs)
+    deepgram = await deepgramService.createConnection(ws, groq)
+  } catch {
+    if (ws.readyState === 1) {
+      ws.send(
+        JSON.stringify({
+          type: 'error',
+          message: 'Không thể khởi tạo, vui lòng kết nối lại.',
+        })
+      )
+    }
+    ws.close(1011)
+    return
+  }
+
   ws.on('message', (data, isBinary) => {
     if (!isBinary) {
       ws.close(1003)
