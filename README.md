@@ -7,7 +7,7 @@ Voice AI Assistant.
 - Node.js >= 22 (LTS)
 - Deepgram Account
 - Groq Account
-- ElevenLabs Account
+- Azure Account
 
 ## Setup
 
@@ -27,7 +27,7 @@ npm run dev
 
 ## Note
 
-Only Vietnamese is supported. You can change the language in the Deepgram and ElevenLabs settings to a supported one
+Default language is Vietnamese. You can switch to any supported language in the Deepgram settings
 
 ## Workflow
 

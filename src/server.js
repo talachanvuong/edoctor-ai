@@ -2,7 +2,7 @@ import http from 'http'
 import { WebSocketServer } from 'ws'
 import deepgramService from './services/deepgramService.js'
 import groqService from './services/groqService.js'
-import elevenlabsService from './services/elevenlabsService.js'
+import speechService from './services/speechService.js'
 
 process.on('uncaughtException', () => {})
 process.on('unhandledRejection', () => {})
@@ -25,8 +25,8 @@ wss.on('connection', async (ws) => {
   let deepgram
 
   try {
-    const elevenlabs = elevenlabsService.createInstance(ws)
-    const groq = groqService.createInstance(ws, elevenlabs)
+    const speech = speechService.createInstance(ws)
+    const groq = groqService.createInstance(ws, speech)
     deepgram = await deepgramService.createConnection(ws, groq)
   } catch {
     if (ws.readyState === 1) {

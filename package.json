@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@deepgram/sdk": "^5.0.0",
-    "@elevenlabs/elevenlabs-js": "^2.39.0",
     "groq-sdk": "^1.1.1",
+    "microsoft-cognitiveservices-speech-sdk": "^1.48.0",
     "ws": "^8.19.0"
   }
 }
